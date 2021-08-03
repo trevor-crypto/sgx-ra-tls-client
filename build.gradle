@@ -1,0 +1,22 @@
+plugins {
+    id 'java-library'
+}
+
+group 'org.cryptodotcom'
+version '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
+
+    implementation 'com.google.code.gson:gson:2.8.7'
+    implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.69'
+}
+
+test {
+    useJUnitPlatform()
+}
