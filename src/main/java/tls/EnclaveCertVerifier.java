@@ -1,13 +1,17 @@
-import types.AttestationReport;
-import types.AttestationReportBody;
-import types.EnclaveQuoteStatus;
-import types.Quote;
+package tls;
+
+import tls.types.AttestationReport;
+import tls.types.AttestationReportBody;
+import tls.types.EnclaveQuoteStatus;
+import tls.types.Quote;
 
 import javax.net.ssl.X509TrustManager;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.*;
-import java.security.cert.*;
 import java.security.cert.Certificate;
+import java.security.cert.*;
 import java.text.ParseException;
 import java.time.Duration;
 import java.time.Instant;
@@ -17,28 +21,41 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class EnclaveCertVerifier implements X509TrustManager {
-    private HashSet<EnclaveQuoteStatus> validEnclaveQuoteStatuses;
-    private TrustAnchor rootCert;
-    private Duration reportValidityDuration;
+    private final Set<EnclaveQuoteStatus> validEnclaveQuoteStatuses;
+    private final TrustAnchor rootCert;
+    private final Duration reportValidityDuration;
+    private final QuoteVerifier quoteVerifier;
 
     private static final String OID_EXTENSION_ATTESTATION_REPORT = "2.16.840.1.113730.1.13";
 
     /**
-     * @param validQuotes            Valid enclave quote statuses
-     * @param reportValidityDuration Validity duration for enclave attestation report
+     * @param validQuotes Valid enclave quote statuses
+     * @param reportValidityDuration Validity duration of enclave quote
+     * @throws CertificateException
+     * @throws IOException
      */
-    public EnclaveCertVerifier(HashSet<EnclaveQuoteStatus> validQuotes, Duration reportValidityDuration) {
+    public EnclaveCertVerifier(Set<EnclaveQuoteStatus> validQuotes, Duration reportValidityDuration) throws CertificateException, IOException {
+        this(validQuotes, new QuoteVerifier() {}, reportValidityDuration);
+    }
+
+    /**
+     * @param validQuotes Valid enclave quote statuses
+     * @param quoteVerifier A custom verifier to verify values in an enclave quote
+     * @param reportValidityDuration Validity duration of enclave quote
+     * @throws CertificateException
+     * @throws IOException
+     */
+    public EnclaveCertVerifier(Set<EnclaveQuoteStatus> validQuotes, QuoteVerifier quoteVerifier, Duration reportValidityDuration) throws CertificateException, IOException {
         ClassLoader classLoader = this.getClass().getClassLoader();
-        File file = new File(Objects.requireNonNull(classLoader.getResource("AttestationReportSigningCACert.pem")).getFile());
-        try (InputStream in = new FileInputStream(file)) {
-            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-            X509Certificate rootCert = (X509Certificate) certificateFactory.generateCertificate(in);
-            this.rootCert = new TrustAnchor(rootCert, new byte[]{});
-            this.validEnclaveQuoteStatuses = validQuotes;
-            this.reportValidityDuration = reportValidityDuration;
-        } catch (IOException | CertificateException e) {
-            e.printStackTrace();
-        }
+        Path certPath = Path.of(Objects.requireNonNull(classLoader.getResource("AttestationReportSigningCACert.der")).getPath());
+        byte[] cert = Files.readAllBytes(certPath);
+        CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+        X509Certificate rootCert = (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(cert));
+
+        this.rootCert = new TrustAnchor(rootCert, null);
+        this.validEnclaveQuoteStatuses = validQuotes;
+        this.quoteVerifier = quoteVerifier;
+        this.reportValidityDuration = reportValidityDuration;
     }
 
     @Override
@@ -51,16 +68,15 @@ public class EnclaveCertVerifier implements X509TrustManager {
         Date now = new Date();
         for (X509Certificate cert : x509Certificates) {
             cert.checkValidity(now);
-            PublicKey publicKey = cert.getPublicKey();
+            byte[] publicKey = cert.getPublicKey().getEncoded();
             byte[] report = cert.getExtensionValue(OID_EXTENSION_ATTESTATION_REPORT);
 
             // Verify attestation report
             verifyAttestationReport(report, publicKey, now);
-
         }
     }
 
-    private Quote verifyAttestationReport(byte[] reportBytes, PublicKey publicKey, Date now) throws CertificateException {
+    protected Quote verifyAttestationReport(byte[] reportBytes, byte[] publicKey, Date now) throws CertificateException {
         AttestationReport attestationReport = AttestationReport.fromBytes(reportBytes);
         // read in certificate chain from PEM format
         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
@@ -72,7 +88,7 @@ public class EnclaveCertVerifier implements X509TrustManager {
         try {
             verifyCertificates(x509Certificates, now);
         } catch (GeneralSecurityException e) {
-            throw new CertificateException("Couldn't verify certificates", e);
+            throw new CertificateException("Couldn't verify certificate chain", e);
         }
 
         PublicKey endEntityPublicKey = endEntityCert.getPublicKey();
@@ -84,10 +100,10 @@ public class EnclaveCertVerifier implements X509TrustManager {
         return verifyAttestationReportBody(attestationReport.body, publicKey, now);
     }
 
-    private Quote verifyAttestationReportBody(byte[] reportBodyBytes, PublicKey publicKey, Date now) throws CertificateException {
+    private Quote verifyAttestationReportBody(byte[] reportBodyBytes, byte[] publicKey, Date now) throws CertificateException {
         AttestationReportBody reportBody = AttestationReportBody.fromBytes(reportBodyBytes);
         String reportTimeUtcString = reportBody.timestamp.concat("+00:00");
-        TemporalAccessor ta = DateTimeFormatter.ISO_INSTANT.parse(reportTimeUtcString);
+        TemporalAccessor ta = DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(reportTimeUtcString);
         Instant i = Instant.from(ta);
         if (i.plus(this.reportValidityDuration).compareTo(now.toInstant()) > 0) {
             throw new CertificateException("Report expired");
@@ -102,6 +118,11 @@ public class EnclaveCertVerifier implements X509TrustManager {
             Quote quote = Quote.parseFromBase64(reportBody.isvEnclaveQuoteBody);
             if (!quote.publicKeyMatches(publicKey)) {
                 throw new CertificateException("Enclave quote public key mismatch");
+            }
+
+            // Do actual quote verification, like checking measurements
+            if(!this.quoteVerifier.verify(quote)) {
+                throw new CertificateException("Quote verification failed");
             }
             return quote;
         } catch (ParseException e) {

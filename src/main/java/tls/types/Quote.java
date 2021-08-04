@@ -1,4 +1,4 @@
-package types;
+package tls.types;
 
 import java.security.PublicKey;
 import java.text.ParseException;
@@ -19,11 +19,10 @@ public class Quote {
         return quote;
     }
 
-    public boolean publicKeyMatches(PublicKey publicKey) {
-        byte[] pubkeyBytes = publicKey.getEncoded();
-        boolean correctLength = pubkeyBytes.length == 65;
-        boolean isUncompressed = pubkeyBytes[0] == 4;
-        boolean matchesQuote = Arrays.equals(Arrays.copyOfRange(pubkeyBytes, 1, 64), this.report_body.report_data);
+    public boolean publicKeyMatches(byte[] publicKey) {
+        boolean correctLength = publicKey.length == 65;
+        boolean isUncompressed = publicKey[0] == 4;
+        boolean matchesQuote = Arrays.equals(Arrays.copyOfRange(publicKey, 1, 65), this.report_body.report_data);
         return correctLength && isUncompressed && matchesQuote;
     }
 

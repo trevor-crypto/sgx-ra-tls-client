@@ -1,4 +1,4 @@
-package types;
+package tls.types;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -9,9 +9,10 @@ public class QuoteReportBody {
     private static final int LENGTH = 384;
 
     public byte[] cpu_svn = new byte[16];
+    public int misc_select;
     public byte[] attributes = new byte[16];
-    public byte[] mr_signer = new byte[32];
     public byte[] mr_enclave = new byte[32];
+    public byte[] mr_signer = new byte[32];
     public short isv_prod_id;
     public short isv_svn;
     public byte[] report_data = new byte[64];
@@ -22,13 +23,18 @@ public class QuoteReportBody {
         }
         ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
         QuoteReportBody reportBody = new QuoteReportBody();
-        buffer.get(reportBody.cpu_svn, 0, 16);
-        buffer.get(reportBody.attributes, 0, 16);
-        buffer.get(reportBody.mr_signer, 0, 32);
-        buffer.get(reportBody.mr_enclave, 0, 32);
+        buffer.get(reportBody.cpu_svn);
+        reportBody.misc_select = buffer.getInt();
+        buffer.position(buffer.position() + 28);
+        buffer.get(reportBody.attributes);
+        buffer.get(reportBody.mr_enclave);
+        buffer.position(buffer.position() + 32);
+        buffer.get(reportBody.mr_signer);
+        buffer.position(buffer.position() + 96);
         reportBody.isv_prod_id = buffer.getShort();
         reportBody.isv_svn = buffer.getShort();
-        reportBody.report_data = buffer.slice().array();
+        buffer.position(buffer.position() + 60);
+        buffer.get(reportBody.report_data);
         return reportBody;
     }
 

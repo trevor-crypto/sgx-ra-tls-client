@@ -1,4 +1,4 @@
-package types;
+package tls.types;
 
 import com.google.gson.Gson;
 

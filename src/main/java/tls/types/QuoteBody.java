@@ -1,4 +1,4 @@
-package types;
+package tls.types;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -26,7 +26,8 @@ public class QuoteBody {
         quoteBody.gid = buffer.getInt();
         quoteBody.qe_svn = buffer.getShort();
         quoteBody.pce_svn = buffer.getShort();
-        quoteBody.basename = buffer.slice().array();
+        buffer.position(buffer.position() + 4);
+        buffer.get(quoteBody.basename);
         return quoteBody;
     }
 
