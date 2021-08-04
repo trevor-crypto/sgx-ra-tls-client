@@ -1,4 +1,4 @@
-package tls.types;
+package com.cryptodotcom.types;
 
 public enum EnclaveQuoteStatus {
     OK,

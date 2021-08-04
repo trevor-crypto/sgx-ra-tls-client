@@ -1,6 +1,6 @@
-package tls;
+package com.cryptodotcom;
 
-import tls.types.Quote;
+import com.cryptodotcom.types.Quote;
 
 public interface QuoteVerifier {
     @SuppressWarnings("SameReturnValue")

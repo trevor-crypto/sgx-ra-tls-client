@@ -1,4 +1,4 @@
-package tls.types;
+package com.cryptodotcom.types;
 
 import com.google.gson.Gson;
 import org.junit.jupiter.api.Test;

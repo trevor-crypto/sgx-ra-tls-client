@@ -1,14 +1,12 @@
-package tls;
+package com.cryptodotcom;
 
-import tls.types.AttestationReport;
-import tls.types.AttestationReportBody;
-import tls.types.EnclaveQuoteStatus;
-import tls.types.Quote;
+import com.cryptodotcom.types.AttestationReport;
+import com.cryptodotcom.types.AttestationReportBody;
+import com.cryptodotcom.types.EnclaveQuoteStatus;
+import com.cryptodotcom.types.Quote;
 
 import javax.net.ssl.X509TrustManager;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.*;
@@ -47,8 +45,9 @@ public class EnclaveCertVerifier implements X509TrustManager {
      */
     public EnclaveCertVerifier(Set<EnclaveQuoteStatus> validQuotes, QuoteVerifier quoteVerifier, Duration reportValidityDuration) throws CertificateException, IOException {
         ClassLoader classLoader = this.getClass().getClassLoader();
-        Path certPath = Path.of(Objects.requireNonNull(classLoader.getResource("AttestationReportSigningCACert.der")).getPath());
-        byte[] cert = Files.readAllBytes(certPath);
+        InputStream derIn = classLoader.getResourceAsStream("AttestationReportSigningCACert.der");
+        DataInputStream dataInputStream = new DataInputStream(derIn);
+        byte[] cert = dataInputStream.readAllBytes();
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
         X509Certificate rootCert = (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(cert));
 

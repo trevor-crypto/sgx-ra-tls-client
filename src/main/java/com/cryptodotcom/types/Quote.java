@@ -1,4 +1,4 @@
-package tls.types;
+package com.cryptodotcom.types;
 
 import java.text.ParseException;
 import java.util.Arrays;

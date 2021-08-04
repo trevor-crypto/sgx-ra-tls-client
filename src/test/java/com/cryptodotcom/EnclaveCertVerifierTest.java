@@ -1,14 +1,12 @@
-package tls;
+package com.cryptodotcom;
 
 import org.junit.jupiter.api.Test;
-import tls.types.EnclaveQuoteStatus;
+import com.cryptodotcom.types.EnclaveQuoteStatus;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.security.spec.InvalidKeySpecException;
 import java.time.Duration;
 import java.util.*;
 
