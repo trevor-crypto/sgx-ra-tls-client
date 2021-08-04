@@ -8,14 +8,14 @@ import java.util.Arrays;
 public class QuoteReportBody {
     private static final int LENGTH = 384;
 
-    public byte[] cpu_svn = new byte[16];
+    public final byte[] cpu_svn = new byte[16];
     public int misc_select;
-    public byte[] attributes = new byte[16];
-    public byte[] mr_enclave = new byte[32];
-    public byte[] mr_signer = new byte[32];
+    public final byte[] attributes = new byte[16];
+    public final byte[] mr_enclave = new byte[32];
+    public final byte[] mr_signer = new byte[32];
     public short isv_prod_id;
     public short isv_svn;
-    public byte[] report_data = new byte[64];
+    public final byte[] report_data = new byte[64];
 
     public static QuoteReportBody fromBytes(byte[] bytes) throws ParseException {
         if(bytes.length != QuoteReportBody.LENGTH) {

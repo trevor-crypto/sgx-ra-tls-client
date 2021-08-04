@@ -13,7 +13,7 @@ public class QuoteBody {
     public int gid;
     public short qe_svn;
     public short pce_svn;
-    public byte[] basename = new byte[32];
+    public final byte[] basename = new byte[32];
 
     public static QuoteBody fromBytes(byte[] bytes) throws ParseException {
         if(bytes.length != QuoteBody.LENGTH) {

@@ -31,8 +31,8 @@ public class EnclaveCertVerifier implements X509TrustManager {
     /**
      * @param validQuotes Valid enclave quote statuses
      * @param reportValidityDuration Validity duration of enclave quote
-     * @throws CertificateException
-     * @throws IOException
+     * @throws CertificateException When the CA cert can't be parsed
+     * @throws IOException Should never occur since resource is bundled with library
      */
     public EnclaveCertVerifier(Set<EnclaveQuoteStatus> validQuotes, Duration reportValidityDuration) throws CertificateException, IOException {
         this(validQuotes, new QuoteVerifier() {}, reportValidityDuration);
@@ -42,8 +42,8 @@ public class EnclaveCertVerifier implements X509TrustManager {
      * @param validQuotes Valid enclave quote statuses
      * @param quoteVerifier A custom verifier to verify values in an enclave quote
      * @param reportValidityDuration Validity duration of enclave quote
-     * @throws CertificateException
-     * @throws IOException
+     * @throws CertificateException When the CA cert can't be parsed
+     * @throws IOException Should never occur since resource is bundled with library
      */
     public EnclaveCertVerifier(Set<EnclaveQuoteStatus> validQuotes, QuoteVerifier quoteVerifier, Duration reportValidityDuration) throws CertificateException, IOException {
         ClassLoader classLoader = this.getClass().getClassLoader();

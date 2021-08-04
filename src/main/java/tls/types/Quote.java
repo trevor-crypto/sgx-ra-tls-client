@@ -1,6 +1,5 @@
 package tls.types;
 
-import java.security.PublicKey;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Base64;

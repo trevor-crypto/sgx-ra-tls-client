@@ -4,17 +4,16 @@ import com.google.gson.Gson;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Objects;
 
 class AttestationReportTest {
 
     @Test
-    void canDeserialize() throws FileNotFoundException, ParseException {
+    void canDeserialize() throws Exception {
         ClassLoader classLoader = this.getClass().getClassLoader();
-        File file = new File(classLoader.getResource("valid_attestation_report.json").getFile());
+        File file = new File(Objects.requireNonNull(classLoader.getResource("valid_attestation_report.json")).getFile());
         FileReader fileReader = new FileReader(file);
         Gson gson = new Gson();
         AttestationReport report = gson.fromJson(fileReader, AttestationReport.class);

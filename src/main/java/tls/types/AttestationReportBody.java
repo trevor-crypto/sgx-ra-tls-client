@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.text.ParseException;
+import java.util.Arrays;
 
 public class AttestationReportBody {
     public String id;
@@ -45,7 +46,7 @@ public class AttestationReportBody {
                 ", nonce='" + nonce + '\'' +
                 ", epidPseudonym='" + epidPseudonym + '\'' +
                 ", advisoryURL='" + advisoryURL + '\'' +
-                ", advisoryIDs='" + advisoryIDs + '\'' +
+                ", advisoryIDs='" + Arrays.toString(advisoryIDs) + '\'' +
                 '}';
     }
 }
