@@ -14,7 +14,6 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
 
     implementation 'com.google.code.gson:gson:2.8.7'
-    implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.69'
 }
 
 test {
