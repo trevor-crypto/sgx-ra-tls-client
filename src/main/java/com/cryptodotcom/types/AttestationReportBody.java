@@ -1,6 +1,7 @@
 package com.cryptodotcom.types;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
@@ -26,7 +27,7 @@ public class AttestationReportBody {
         return Quote.parseFromBase64(this.isvEnclaveQuoteBody);
     }
 
-    public static AttestationReportBody fromBytes(byte[] reportBytes) {
+    public static AttestationReportBody fromBytes(byte[] reportBytes) throws JsonSyntaxException {
         Gson gson = new Gson();
         return gson.fromJson(new InputStreamReader(new ByteArrayInputStream(reportBytes)), AttestationReportBody.class);
     }
