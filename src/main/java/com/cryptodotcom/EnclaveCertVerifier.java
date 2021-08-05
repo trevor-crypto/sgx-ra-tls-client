@@ -4,22 +4,20 @@ import com.cryptodotcom.types.AttestationReport;
 import com.cryptodotcom.types.AttestationReportBody;
 import com.cryptodotcom.types.EnclaveQuoteStatus;
 import com.cryptodotcom.types.Quote;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
-import org.bouncycastle.x509.extension.X509ExtensionUtil;
+import org.bouncycastle.asn1.ASN1OctetString;
 
 import javax.net.ssl.X509TrustManager;
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.*;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECPoint;
 import java.text.ParseException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAccessor;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -51,7 +49,7 @@ public class EnclaveCertVerifier implements X509TrustManager {
     public EnclaveCertVerifier(Set<EnclaveQuoteStatus> validQuotes, QuoteVerifier quoteVerifier, Duration reportValidityDuration) throws CertificateException, IOException {
         ClassLoader classLoader = this.getClass().getClassLoader();
         InputStream derIn = classLoader.getResourceAsStream("AttestationReportSigningCACert.der");
-        DataInputStream dataInputStream = new DataInputStream(derIn);
+        DataInputStream dataInputStream = new DataInputStream(Objects.requireNonNull(derIn));
         byte[] cert = dataInputStream.readAllBytes();
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
         X509Certificate rootCert = (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(cert));
@@ -72,16 +70,9 @@ public class EnclaveCertVerifier implements X509TrustManager {
         Date now = new Date();
         for (X509Certificate cert : x509Certificates) {
             cert.checkValidity(now);
-            byte[] publicKey = cert.getPublicKey().getEncoded();
+            byte[] publicKey = getPublicKeyBytes(cert.getPublicKey());
             byte[] reportDerOctet = cert.getExtensionValue(OID_EXTENSION_ATTESTATION_REPORT);
-            byte[] reportBytes;
-            try {
-                ASN1Primitive extValue = JcaX509ExtensionUtils.parseExtensionValue(reportDerOctet);
-                String extensionString = extValue.toString();
-                reportBytes = extensionString.getBytes();
-            } catch (IOException e) {
-                throw new CertificateException("Could not get attestation report from X509 extension");
-            }
+            byte[] reportBytes = ASN1OctetString.getInstance(reportDerOctet).getOctets();
 
             // Verify attestation report
             verifyAttestationReport(reportBytes, publicKey, now);
@@ -115,9 +106,8 @@ public class EnclaveCertVerifier implements X509TrustManager {
     private Quote verifyAttestationReportBody(byte[] reportBodyBytes, byte[] publicKey, Date now) throws CertificateException {
         AttestationReportBody reportBody = AttestationReportBody.fromBytes(reportBodyBytes);
         String reportTimeUtcString = reportBody.timestamp.concat("+00:00");
-        TemporalAccessor ta = DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(reportTimeUtcString);
-        Instant i = Instant.from(ta);
-        if (i.plus(this.reportValidityDuration).compareTo(now.toInstant()) > 0) {
+        Instant reportTime = Instant.from(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(reportTimeUtcString));
+        if (reportTime.plus(this.reportValidityDuration).isBefore(now.toInstant())) {
             throw new CertificateException("Report expired");
         }
         List<EnclaveQuoteStatus> statuses = Arrays.stream(reportBody.isvEnclaveQuoteStatus.split(",")).map(EnclaveQuoteStatus::valueOf).collect(Collectors.toList());
@@ -175,6 +165,25 @@ public class EnclaveCertVerifier implements X509TrustManager {
             return rsa.verify(signature);
         } catch (InvalidKeyException | SignatureException | NoSuchAlgorithmException e) {
             throw new CertificateException("Could not verify signature");
+        }
+    }
+
+    private byte[] getPublicKeyBytes(PublicKey publicKey) throws CertificateException {
+        int PUB_KEY_SIZE = 65;
+        if(publicKey instanceof ECPublicKey) {
+            ECPoint point = ((ECPublicKey) publicKey).getW();
+            byte[] x = point.getAffineX().toByteArray();
+            x[0] = 4;
+            byte[] y = point.getAffineY().toByteArray();
+            if(x.length + y.length != PUB_KEY_SIZE) {
+                throw new CertificateException("Public key parts incorrect size");
+            }
+            ByteBuffer buffer = ByteBuffer.allocate(PUB_KEY_SIZE);
+            buffer.put(x);
+            buffer.put(y);
+            return buffer.array();
+        } else {
+            throw new CertificateException("Public key not EC key");
         }
     }
 

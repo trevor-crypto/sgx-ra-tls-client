@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.cert.CertificateException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 class EnclaveCertVerifierTest {
@@ -27,7 +28,8 @@ class EnclaveCertVerifierTest {
         validStatuses.add(EnclaveQuoteStatus.CONFIGURATION_AND_SW_HARDENING_NEEDED);
 
         EnclaveCertVerifier verifier = new EnclaveCertVerifier(validStatuses, Duration.ofSeconds(86400));
-        Date now = new Date();
+
+        Date now = Date.from(Instant.ofEpochSecond(1594612800));
         verifier.verifyAttestationReport(attestationReport, publicKey, now);
     }
 }
