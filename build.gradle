@@ -29,7 +29,7 @@ publishing {
       name = "GitHubPackages"
       url = "https://maven.pkg.github.com/trevor-crypto/sgx-ra-tls-client"
       credentials {
-        username = System.getenv("GITHUB_ACTOR")
+        username = System.getenv("GITHUB_USERNAME")
         password = System.getenv("GITHUB_TOKEN")
       }
     }
