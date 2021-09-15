@@ -8,7 +8,10 @@ import org.bouncycastle.asn1.ASN1OctetString;
 
 import javax.net.ssl.X509TrustManager;
 import java.io.*;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.*;
@@ -35,7 +38,7 @@ public class EnclaveCertVerifier implements X509TrustManager {
      * @throws CertificateException When the CA cert can't be parsed
      * @throws IOException Should never occur since resource is bundled with library
      */
-    public EnclaveCertVerifier(Set<EnclaveQuoteStatus> validQuotes, Duration reportValidityDuration) throws CertificateException, IOException {
+    public EnclaveCertVerifier(Set<EnclaveQuoteStatus> validQuotes, Duration reportValidityDuration) throws CertificateException, IOException, URISyntaxException {
         this(validQuotes, new QuoteVerifier() {}, reportValidityDuration);
     }
 
@@ -46,11 +49,9 @@ public class EnclaveCertVerifier implements X509TrustManager {
      * @throws CertificateException When the CA cert can't be parsed
      * @throws IOException Should never occur since resource is bundled with library
      */
-    public EnclaveCertVerifier(Set<EnclaveQuoteStatus> validQuotes, QuoteVerifier quoteVerifier, Duration reportValidityDuration) throws CertificateException, IOException {
+    public EnclaveCertVerifier(Set<EnclaveQuoteStatus> validQuotes, QuoteVerifier quoteVerifier, Duration reportValidityDuration) throws CertificateException, IOException, URISyntaxException {
         ClassLoader classLoader = this.getClass().getClassLoader();
-        InputStream derIn = classLoader.getResourceAsStream("AttestationReportSigningCACert.der");
-        DataInputStream dataInputStream = new DataInputStream(Objects.requireNonNull(derIn));
-        byte[] cert = dataInputStream.readAllBytes();
+        byte[] cert = Files.readAllBytes(Paths.get(classLoader.getResource("AttestationReportSigningCACert.der").toURI()));
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
         X509Certificate rootCert = (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(cert));
 

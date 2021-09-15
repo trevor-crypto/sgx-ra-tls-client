@@ -4,8 +4,10 @@ import org.junit.jupiter.api.Test;
 import com.cryptodotcom.types.EnclaveQuoteStatus;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.time.Instant;
@@ -14,9 +16,9 @@ import java.util.*;
 class EnclaveCertVerifierTest {
 
     @Test
-    void verifyAttestationReport() throws IOException, CertificateException {
+    void verifyAttestationReport() throws IOException, CertificateException, URISyntaxException {
         ClassLoader classLoader = this.getClass().getClassLoader();
-        Path filePath = Path.of(Objects.requireNonNull(classLoader.getResource("valid_attestation_report.json")).getPath());
+        Path filePath = Paths.get(classLoader.getResource("valid_attestation_report.json").toURI());
         byte[] attestationReport = Files.readAllBytes(filePath);
         byte[] reportData = Base64.getDecoder().decode("1g+Nvsow2LXbrJVq/8YS5wMUd+GTeOkBegUmnGtcfyLSS0qP6ufwO2HEDV70O4W/tFDx57tziaOWd6OJjenAeg==");
         byte[] publicKey = new byte[reportData.length + 1];
