@@ -8,12 +8,8 @@ import org.spongycastle.asn1.ASN1OctetString;
 
 import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.*;
@@ -37,11 +33,10 @@ public class EnclaveCertVerifier implements X509TrustManager {
      * @param validQuotes            Valid enclave quote statuses
      * @param reportValidityDuration Validity duration of enclave quote
      * @throws CertificateException When the CA cert can't be parsed
-     * @throws IOException          Should never occur since resource is bundled with library
      */
-    public EnclaveCertVerifier(Set<EnclaveQuoteStatus> validQuotes, Duration reportValidityDuration) throws CertificateException, IOException, URISyntaxException {
+    public EnclaveCertVerifier(Set<EnclaveQuoteStatus> validQuotes, Duration reportValidityDuration, InputStream certIS) throws CertificateException {
         this(validQuotes, new QuoteVerifier() {
-        }, reportValidityDuration);
+        }, reportValidityDuration, certIS);
     }
 
     /**
@@ -49,13 +44,10 @@ public class EnclaveCertVerifier implements X509TrustManager {
      * @param quoteVerifier          A custom verifier to verify values in an enclave quote
      * @param reportValidityDuration Validity duration of enclave quote
      * @throws CertificateException When the CA cert can't be parsed
-     * @throws IOException          Should never occur since resource is bundled with library
      */
-    public EnclaveCertVerifier(Set<EnclaveQuoteStatus> validQuotes, QuoteVerifier quoteVerifier, Duration reportValidityDuration) throws CertificateException, IOException, URISyntaxException {
-        ClassLoader classLoader = this.getClass().getClassLoader();
-        byte[] cert = Files.readAllBytes(Paths.get(classLoader.getResource("AttestationReportSigningCACert.der").toURI()));
+    public EnclaveCertVerifier(Set<EnclaveQuoteStatus> validQuotes, QuoteVerifier quoteVerifier, Duration reportValidityDuration, InputStream certIs) throws CertificateException {
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-        X509Certificate rootCert = (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(cert));
+        X509Certificate rootCert = (X509Certificate) certificateFactory.generateCertificate(certIs);
 
         this.rootCert = new TrustAnchor(rootCert, null);
         this.validEnclaveQuoteStatuses = validQuotes;

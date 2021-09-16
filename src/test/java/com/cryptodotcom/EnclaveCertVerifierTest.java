@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import com.cryptodotcom.types.EnclaveQuoteStatus;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,7 +30,8 @@ class EnclaveCertVerifierTest {
         validStatuses.add(EnclaveQuoteStatus.OK);
         validStatuses.add(EnclaveQuoteStatus.CONFIGURATION_AND_SW_HARDENING_NEEDED);
 
-        EnclaveCertVerifier verifier = new EnclaveCertVerifier(validStatuses, Duration.ofSeconds(86400));
+        InputStream inputStream = classLoader.getResourceAsStream("AttestationReportSigningCACert.der");
+        EnclaveCertVerifier verifier = new EnclaveCertVerifier(validStatuses, Duration.ofSeconds(86400), inputStream);
 
         Date now = Date.from(Instant.ofEpochSecond(1594612800));
         verifier.verifyAttestationReport(attestationReport, publicKey, now);
