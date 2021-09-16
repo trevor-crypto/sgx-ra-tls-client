@@ -23,13 +23,13 @@ public class AttestationReportBody {
     public String advisoryURL;
     public String[] advisoryIDs;
 
-    public Quote getQuote() throws ParseException {
-        return Quote.parseFromBase64(this.isvEnclaveQuoteBody);
-    }
-
     public static AttestationReportBody fromBytes(byte[] reportBytes) throws JsonSyntaxException {
         Gson gson = new Gson();
         return gson.fromJson(new InputStreamReader(new ByteArrayInputStream(reportBytes)), AttestationReportBody.class);
+    }
+
+    public Quote getQuote() throws ParseException {
+        return Quote.parseFromBase64(this.isvEnclaveQuoteBody);
     }
 
     @Override

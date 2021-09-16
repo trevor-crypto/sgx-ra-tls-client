@@ -7,7 +7,9 @@ import com.cryptodotcom.types.Quote;
 import org.bouncycastle.asn1.ASN1OctetString;
 
 import javax.net.ssl.X509TrustManager;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -25,29 +27,29 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class EnclaveCertVerifier implements X509TrustManager {
+    private static final String OID_EXTENSION_ATTESTATION_REPORT = "2.16.840.1.113730.1.13";
     private final Set<EnclaveQuoteStatus> validEnclaveQuoteStatuses;
     private final TrustAnchor rootCert;
     private final Duration reportValidityDuration;
     private final QuoteVerifier quoteVerifier;
 
-    private static final String OID_EXTENSION_ATTESTATION_REPORT = "2.16.840.1.113730.1.13";
-
     /**
-     * @param validQuotes Valid enclave quote statuses
+     * @param validQuotes            Valid enclave quote statuses
      * @param reportValidityDuration Validity duration of enclave quote
      * @throws CertificateException When the CA cert can't be parsed
-     * @throws IOException Should never occur since resource is bundled with library
+     * @throws IOException          Should never occur since resource is bundled with library
      */
     public EnclaveCertVerifier(Set<EnclaveQuoteStatus> validQuotes, Duration reportValidityDuration) throws CertificateException, IOException, URISyntaxException {
-        this(validQuotes, new QuoteVerifier() {}, reportValidityDuration);
+        this(validQuotes, new QuoteVerifier() {
+        }, reportValidityDuration);
     }
 
     /**
-     * @param validQuotes Valid enclave quote statuses
-     * @param quoteVerifier A custom verifier to verify values in an enclave quote
+     * @param validQuotes            Valid enclave quote statuses
+     * @param quoteVerifier          A custom verifier to verify values in an enclave quote
      * @param reportValidityDuration Validity duration of enclave quote
      * @throws CertificateException When the CA cert can't be parsed
-     * @throws IOException Should never occur since resource is bundled with library
+     * @throws IOException          Should never occur since resource is bundled with library
      */
     public EnclaveCertVerifier(Set<EnclaveQuoteStatus> validQuotes, QuoteVerifier quoteVerifier, Duration reportValidityDuration) throws CertificateException, IOException, URISyntaxException {
         ClassLoader classLoader = this.getClass().getClassLoader();
@@ -97,7 +99,7 @@ public class EnclaveCertVerifier implements X509TrustManager {
 
         PublicKey endEntityPublicKey = endEntityCert.getPublicKey();
         boolean isValid = verifyReportSignature(endEntityPublicKey, attestationReport.body, attestationReport.signature);
-        if(!isValid) {
+        if (!isValid) {
             throw new CertificateException("Attestation report signature invalid");
         }
 
@@ -124,7 +126,7 @@ public class EnclaveCertVerifier implements X509TrustManager {
             }
 
             // Do actual quote verification, like checking measurements
-            if(!this.quoteVerifier.verify(quote)) {
+            if (!this.quoteVerifier.verify(quote)) {
                 throw new CertificateException("Quote verification failed");
             }
             return quote;
@@ -152,7 +154,7 @@ public class EnclaveCertVerifier implements X509TrustManager {
 
     private boolean verifyReportSignature(PublicKey endEntityPublicKey, byte[] reportBody, byte[] reportSignature) throws CertificateException {
         boolean isValid = verifySignature("SHA256withRSA", endEntityPublicKey, reportBody, reportSignature);
-        if(!isValid) {
+        if (!isValid) {
             isValid = verifySignature("SHA256withECDSA", endEntityPublicKey, reportBody, reportSignature);
         }
         return isValid;
@@ -171,12 +173,12 @@ public class EnclaveCertVerifier implements X509TrustManager {
 
     private byte[] getPublicKeyBytes(PublicKey publicKey) throws CertificateException {
         int PUB_KEY_SIZE = 65;
-        if(publicKey instanceof ECPublicKey) {
+        if (publicKey instanceof ECPublicKey) {
             ECPoint point = ((ECPublicKey) publicKey).getW();
             byte[] x = point.getAffineX().toByteArray();
             x[0] = 4;
             byte[] y = point.getAffineY().toByteArray();
-            if(x.length + y.length != PUB_KEY_SIZE) {
+            if (x.length + y.length != PUB_KEY_SIZE) {
                 throw new CertificateException("Public key parts incorrect size");
             }
             ByteBuffer buffer = ByteBuffer.allocate(PUB_KEY_SIZE);

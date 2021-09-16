@@ -7,16 +7,15 @@ import java.util.Arrays;
 
 public class QuoteBody {
     private static final int LENGTH = 48;
-
+    public final byte[] basename = new byte[32];
     public short version;
     public short sig_type;
     public int gid;
     public short qe_svn;
     public short pce_svn;
-    public final byte[] basename = new byte[32];
 
     public static QuoteBody fromBytes(byte[] bytes) throws ParseException {
-        if(bytes.length != QuoteBody.LENGTH) {
+        if (bytes.length != QuoteBody.LENGTH) {
             throw new ParseException(String.format("Quote body is not required length, got %d, required %d", bytes.length, QuoteBody.LENGTH), 0);
         }
         ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
