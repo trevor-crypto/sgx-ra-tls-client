@@ -4,7 +4,7 @@ import com.cryptodotcom.types.AttestationReport;
 import com.cryptodotcom.types.AttestationReportBody;
 import com.cryptodotcom.types.EnclaveQuoteStatus;
 import com.cryptodotcom.types.Quote;
-import org.bouncycastle.asn1.ASN1OctetString;
+import org.spongycastle.asn1.ASN1OctetString;
 
 import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayInputStream;
